@@ -1,0 +1,25 @@
+{
+  "name": "nextcom",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "NextCom - Front",
+    "NextCom - Back"
+  ],
+  "scripts": {
+    "dev": "concurrently -n FRONT,BACK -c magenta,cyan \"npm run dev -w @nextcom/front\" \"npm run dev -w @nextcom/back\"",
+    "build": "npm run build --workspaces",
+    "check": "npm run check --workspaces",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "preview": "npm run preview -w @nextcom/front"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "concurrently": "^10.0.5",
+    "prettier": "^3.9.9",
+    "vitest": "^5.0.1"
+  }
+}

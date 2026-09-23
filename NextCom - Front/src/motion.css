@@ -1,0 +1,365 @@
+/* NextCom motion system. Keep timings aligned with lib/motion.ts. */
+:root {
+  --motion-fast: 160ms;
+  --motion-enter: 320ms;
+  --motion-exit: 180ms;
+  --motion-reveal: 480ms;
+  --motion-data: 520ms;
+  --ease-next: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* Radix Presence waits for these named exit animations before unmounting. */
+[data-slot='dialog-overlay'][data-state='open'] {
+  animation: nc-overlay-in var(--motion-enter) ease-out both;
+}
+[data-slot='dialog-overlay'][data-state='closed'] {
+  animation: nc-overlay-out var(--motion-exit) ease-in both;
+}
+[data-slot='dialog-content'][data-state='open'] {
+  animation: nc-dialog-in var(--motion-enter) var(--ease-next) both;
+}
+[data-slot='dialog-content'][data-state='closed'] {
+  animation: nc-dialog-out var(--motion-exit) var(--ease-exit) both;
+  pointer-events: none;
+}
+[data-slot='dialog-overlay'] {
+  backdrop-filter: blur(3px);
+}
+[data-slot='popover-content'],
+[data-slot='dropdown-menu-content'],
+[data-slot='select-content'],
+[data-slot='tooltip-content'] {
+  --surface-origin: var(
+    --radix-popover-content-transform-origin,
+    var(
+      --radix-select-content-transform-origin,
+      var(
+        --radix-dropdown-menu-content-transform-origin,
+        var(--radix-tooltip-content-transform-origin, center)
+      )
+    )
+  );
+  transform-origin: var(--surface-origin);
+}
+:is(
+  [data-slot='popover-content'],
+  [data-slot='dropdown-menu-content'],
+  [data-slot='select-content']
+)[data-state='open'],
+[data-slot='tooltip-content']:is([data-state='delayed-open'], [data-state='instant-open']) {
+  animation: nc-surface-in 220ms var(--ease-next) both;
+}
+:is(
+  [data-slot='popover-content'],
+  [data-slot='dropdown-menu-content'],
+  [data-slot='select-content'],
+  [data-slot='tooltip-content']
+)[data-state='closed'] {
+  animation: nc-surface-out var(--motion-fast) var(--ease-exit) both;
+  pointer-events: none;
+}
+
+/* Retain the centering translate supplied by Tailwind; animate transform only. */
+@keyframes nc-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes nc-dialog-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(7px) scale(0.98);
+  }
+}
+@keyframes nc-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes nc-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes nc-surface-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes nc-surface-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.98);
+  }
+}
+@keyframes nc-heading-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-heading {
+  animation: nc-heading-in var(--motion-reveal) var(--ease-next) both;
+}
+.filter-bar {
+  animation: nc-heading-in var(--motion-reveal) 60ms var(--ease-next) both;
+}
+.kpi-card,
+.toast {
+  animation: none;
+}
+.kpi-card {
+  transition:
+    border-color var(--motion-enter),
+    box-shadow var(--motion-enter),
+    translate var(--motion-enter) var(--ease-next);
+}
+.animated-number {
+  display: inline-block;
+  position: relative;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Explicit transitions: never transition all layout properties on interaction. */
+button,
+[data-slot='button'],
+[data-slot='select-trigger'] {
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    scale var(--motion-fast) var(--ease-next);
+}
+button:not(:disabled):active {
+  scale: 0.97;
+}
+button:disabled {
+  scale: 1;
+}
+.nav-item > svg,
+.icon-button > svg,
+.export-button > svg,
+.all-countries > svg,
+.insight-strip > button > svg,
+.purpose-card button > svg {
+  transition:
+    transform var(--motion-enter) var(--ease-next),
+    color var(--motion-fast);
+}
+[data-slot='select-trigger'] > svg:last-child {
+  transition: transform var(--motion-enter) var(--ease-next);
+}
+[data-slot='select-trigger'][data-state='open'] > svg:last-child {
+  transform: rotate(180deg);
+}
+:is(.table-search, .global-search, .planner-form input) {
+  transition:
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    background-color var(--motion-fast);
+}
+.table-search:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+.country-progress i {
+  transition: width var(--motion-data) var(--ease-next);
+}
+.world-map > g {
+  transition: transform var(--motion-data) var(--ease-next);
+}
+.world-map path {
+  transition:
+    fill var(--motion-enter) ease-out,
+    stroke var(--motion-fast);
+}
+.channel-segments {
+  position: relative;
+}
+.channel-segment {
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+.channel-segment i {
+  flex: 1;
+  min-width: 2px;
+}
+.channel-row,
+.country-row,
+.campaign-table tbody tr {
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast);
+}
+.segmented {
+  position: relative;
+  isolation: isolate;
+}
+.segmented button {
+  position: relative;
+  z-index: 0;
+}
+.segmented .selected {
+  background: transparent;
+  box-shadow: none;
+}
+.segment-indicator {
+  position: absolute;
+  inset: 0;
+  background: var(--secondary);
+  border-radius: 3px;
+  z-index: -1;
+  box-shadow: 0 1px 3px #0002;
+}
+.toast-positioner {
+  position: fixed;
+  bottom: 24px;
+  left: calc(50% + 112px);
+  transform: translateX(-50%);
+  z-index: 80;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+.toast-positioner .toast {
+  position: relative;
+  inset: auto;
+  transform: none;
+  max-width: 100%;
+  pointer-events: auto;
+}
+.draft-row {
+  position: relative;
+}
+
+/* Theme changes are scoped to painted surfaces, not chart coordinates. */
+body,
+.sidebar,
+.topbar,
+.panel,
+.kpi-card,
+.filter-bar,
+.workspace,
+.purpose-card,
+[data-slot='dialog-content'],
+[data-slot='popover-content'],
+.table-search,
+.campaign-table th,
+.map-footer {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 260ms;
+  transition-timing-function: ease-out;
+}
+.kpi-card {
+  transition-property: background-color, border-color, color, box-shadow, translate;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .kpi-card:hover {
+    translate: 0 -3px;
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    box-shadow: 0 8px 24px #00000012;
+  }
+  .nav-item:hover > svg {
+    transform: translateX(2px);
+  }
+  .export-button:hover > svg {
+    transform: translateY(2px);
+  }
+  .all-countries:hover > svg,
+  .insight-strip > button:hover > svg,
+  .purpose-card button:hover > svg {
+    transform: translateX(3px);
+  }
+  .theme-toggle:hover > svg {
+    transform: rotate(18deg);
+  }
+}
+@media (max-width: 1020px) {
+  .toast-positioner {
+    left: calc(50% + 95px);
+  }
+}
+@media (max-width: 760px) {
+  .sidebar {
+    transition:
+      transform var(--motion-enter) var(--ease-next),
+      background-color 260ms,
+      border-color 260ms;
+  }
+  .sidebar:not(.open) {
+    pointer-events: none;
+  }
+  .toast-positioner {
+    left: 50%;
+  }
+}
+html[data-motion="reduced"] {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+  .page-heading,
+  .filter-bar {
+    animation: none !important;
+  }
+  .kpi-card:hover,
+  button:active {
+    translate: none !important;
+    scale: 1 !important;
+  }
+  .nav-item:hover > svg,
+  .theme-toggle:hover > svg,
+  .export-button:hover > svg,
+  .all-countries:hover > svg,
+  .insight-strip > button:hover > svg,
+  .purpose-card button:hover > svg {
+    transform: none !important;
+  }
+}
+.theme-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}

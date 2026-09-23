@@ -1,0 +1,662 @@
+/* Density follows available content width; type never shrinks to fit a grid. */
+:root {
+  --type-caption: 0.75rem;
+  --type-body: 0.875rem;
+  --type-title: 1rem;
+  --section-gap: 18px;
+}
+.dark {
+  --text-muted: #91919d;
+  --text-secondary: #b4b4be;
+}
+body {
+  font-size: var(--type-body);
+  line-height: 1.5;
+}
+main {
+  container: dashboard / inline-size;
+  max-width: 1680px;
+  padding: 26px 28px 0;
+}
+.page-heading {
+  margin-bottom: 20px;
+}
+.page-heading h1 {
+  font-size: 30px;
+}
+.page-heading p {
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: none;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.demo-indicator {
+  font-size: 12px !important;
+}
+.heading-actions {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.export-button {
+  height: 38px;
+  font-size: 13px;
+}
+.filter-bar {
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: var(--section-gap);
+}
+.filter-left,
+.filter-right {
+  flex-wrap: wrap;
+}
+.account-filter,
+.channel-filter,
+.date-filter {
+  font-size: 13px;
+}
+.date-filter {
+  height: 34px !important;
+}
+.period-comparison,
+.date-range {
+  font-size: 12px;
+}
+.date-range {
+  white-space: nowrap;
+}
+.kpi-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: var(--section-gap);
+}
+.kpi-card {
+  padding: 17px 18px;
+  container-type: normal;
+}
+.kpi-label {
+  font-size: 13px;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.kpi-value,
+.kpi-card .kpi-value.compact {
+  font-size: 28px;
+  line-height: 1.25;
+  letter-spacing: -0.7px;
+}
+.kpi-comparison {
+  margin-top: 11px;
+  flex-wrap: wrap;
+  white-space: normal;
+  gap: 7px;
+}
+.kpi-comparison > span:last-child,
+.delta {
+  font-size: 12px;
+}
+.delta {
+  padding: 4px 5px;
+}
+.primary-grid,
+.geography-grid {
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: var(--section-gap);
+  margin-bottom: var(--section-gap);
+}
+.panel-heading {
+  padding: 19px 20px 0;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.panel-heading h2 {
+  font-size: 16px;
+  line-height: 1.4;
+}
+.panel-heading p {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 5px;
+}
+.compact-select {
+  font-size: 12px;
+  height: 34px !important;
+}
+.segmented button {
+  font-size: 12px;
+  padding: 7px 10px;
+}
+.chart-summary {
+  padding: 18px 20px 0;
+  flex-wrap: wrap;
+}
+.chart-summary > div:first-child > span {
+  font-size: 12px;
+}
+.chart-summary strong {
+  font-size: 28px;
+}
+.chart-legend {
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+}
+.chart-legend > span {
+  font-size: 12px;
+}
+.chart-canvas {
+  height: 240px;
+  margin: 8px 20px 0 12px;
+}
+.chart-footnote {
+  font-size: 12px;
+  padding: 16px 20px;
+  line-height: 1.5;
+}
+.channel-totals {
+  padding: 22px 20px 0;
+  gap: 14px;
+}
+.channel-totals > div > span {
+  font-size: 12px;
+}
+.channel-totals strong {
+  font-size: 25px;
+}
+.channel-segments {
+  margin: 18px 20px;
+}
+.channel-table {
+  margin: 0 20px;
+}
+.channel-table-head {
+  font-size: 12px;
+}
+.channel-row {
+  padding: 10px 0;
+  gap: 10px;
+}
+.channel-row,
+.channel-row > span:last-child {
+  font-size: 13px;
+}
+.channel-note {
+  font-size: 12px;
+  padding: 13px 20px 17px;
+}
+.country-table-head {
+  font-size: 12px;
+  padding: 18px 20px 5px;
+}
+.country-list {
+  padding: 0 20px;
+}
+.country-identity {
+  gap: 10px;
+}
+.country-identity strong,
+.country-value strong {
+  font-size: 13px;
+}
+.country-value small,
+.country-rank {
+  font-size: 12px;
+}
+.country-row {
+  padding: 12px 0;
+}
+.all-countries {
+  font-size: 13px;
+  padding: 13px;
+}
+.map-container {
+  min-height: 280px;
+}
+.world-map {
+  max-height: 340px;
+}
+.map-footer {
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 18px;
+}
+.map-help,
+.map-caption,
+.map-legend {
+  font-size: 12px;
+}
+.map-controls button {
+  width: 30px;
+  height: 30px;
+}
+.map-tooltip strong {
+  font-size: 13px;
+}
+.map-tooltip span {
+  font-size: 12px;
+}
+.map-tooltip {
+  width: 163px;
+}
+.insight-strip {
+  padding: 14px 18px;
+  gap: 12px;
+}
+.insight-strip strong {
+  font-size: 13px;
+}
+.insight-strip > div > span {
+  font-size: 12px;
+}
+.insight-strip > button {
+  font-size: 12px;
+}
+.table-tools {
+  flex-wrap: wrap;
+}
+.table-search {
+  height: 36px;
+}
+.table-search input {
+  width: 170px;
+  font-size: 13px;
+}
+.campaign-table th {
+  font-size: 12px;
+  padding: 12px 14px;
+}
+.campaign-table td {
+  font-size: 13px;
+  padding: 14px;
+}
+.campaign-name strong {
+  font-size: 13px;
+}
+.campaign-name small {
+  font-size: 12px;
+}
+.status-badge {
+  font-size: 12px;
+}
+.table-footer {
+  font-size: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.page-footer {
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.page-footer > button {
+  font-size: 12px;
+}
+.nav-item {
+  font-size: 14px;
+  padding: 12px 10px;
+  gap: 9px;
+}
+.nav-label {
+  font-size: 11px;
+  letter-spacing: 1.2px;
+}
+.workspace {
+  padding: 10px 9px;
+  gap: 8px;
+}
+.workspace strong {
+  font-size: 13px;
+}
+.workspace small {
+  font-size: 11px;
+}
+.workspace-avatar {
+  width: 29px;
+  height: 29px;
+}
+.demo-mini {
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.purpose-card {
+  padding: 14px 12px;
+}
+.purpose-card > strong {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.purpose-card p,
+.purpose-card button {
+  font-size: 12px;
+}
+.sidebar-bottom {
+  padding-top: 28px;
+}
+.sidebar-footer {
+  flex-wrap: wrap;
+  white-space: normal;
+  gap: 6px;
+  font-size: 11px;
+}
+.sidebar-footer > span:nth-child(2) {
+  flex: 1;
+}
+.sidebar-footer > span:last-child {
+  display: none;
+}
+.breadcrumb,
+.global-search input {
+  font-size: 13px;
+}
+.profile-button strong {
+  font-size: 13px;
+}
+.profile-button small {
+  font-size: 11px;
+}
+.topbar {
+  gap: 16px;
+  padding: 0 28px;
+}
+.topbar-right {
+  gap: 12px;
+  min-width: 0;
+}
+.global-search {
+  width: 210px;
+}
+.motion-control {
+  font-size: 12px;
+}
+.notification-popover > p,
+.notification-popover small,
+.workspace-popover p {
+  font-size: 12px;
+}
+.planner-form label,
+.planner-form input {
+  font-size: 13px;
+}
+.draft-row strong,
+.settings-row strong {
+  font-size: 14px;
+}
+.settings-row small {
+  font-size: 12px;
+}
+[data-slot='dialog-description'] {
+  font-size: 13px;
+}
+@container dashboard (min-width: 1480px) {
+  .kpi-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .kpi-value,
+  .kpi-card .kpi-value.compact {
+    font-size: 26px;
+  }
+}
+@container dashboard (max-width: 1039px) {
+  .primary-grid,
+  .geography-grid {
+    grid-template-columns: 1fr;
+  }
+  .period-comparison {
+    display: none;
+  }
+  .page-heading {
+    flex-wrap: wrap;
+  }
+  .chart-canvas {
+    height: 250px;
+  }
+}
+@container dashboard (max-width: 759px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .kpi-value,
+  .kpi-card .kpi-value.compact {
+    font-size: 26px;
+  }
+  .date-range {
+    display: inline;
+  }
+  .insight-strip {
+    flex-wrap: wrap;
+  }
+  .insight-strip > button {
+    padding-left: 44px;
+  }
+  .campaigns-panel .panel-heading {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .table-tools {
+    width: 100%;
+  }
+  .table-search {
+    flex: 1;
+  }
+  .table-search input {
+    width: 100%;
+  }
+}
+@container dashboard (max-width: 499px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .kpi-card:nth-child(1),
+  .kpi-card:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+  .kpi-card:not(:nth-child(1)):not(:nth-child(4)) .kpi-value {
+    font-size: 26px;
+  }
+  .kpi-card:not(:nth-child(1)):not(:nth-child(4)) .kpi-label {
+    min-height: 39px;
+    align-items: flex-start;
+  }
+  .kpi-card {
+    padding: 15px 17px;
+  }
+  .kpi-value,
+  .kpi-card .kpi-value.compact {
+    font-size: 30px;
+  }
+  .page-heading p {
+    font-size: 13px;
+  }
+  .heading-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-direction: row-reverse;
+    padding: 0;
+  }
+  .filter-right {
+    width: 100%;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    justify-content: space-between;
+  }
+  .panel-heading {
+    padding: 17px 16px 0;
+  }
+  .panel-heading h2 {
+    font-size: 15px;
+  }
+  .chart-summary {
+    padding: 16px;
+  }
+  .chart-legend {
+    max-width: none;
+    padding: 0;
+    justify-content: flex-start;
+  }
+  .chart-canvas {
+    margin: 0 10px;
+    height: 225px;
+  }
+  .chart-footnote {
+    padding: 14px 16px;
+  }
+  .channel-totals {
+    padding: 20px 16px 0;
+    gap: 10px;
+  }
+  .channel-totals strong {
+    font-size: 22px;
+  }
+  .channel-totals > div > span {
+    font-size: 12px;
+    gap: 4px;
+  }
+  .channel-row {
+    flex-wrap: wrap;
+  }
+  .channel-table {
+    margin: 0 16px;
+  }
+  .country-list {
+    padding: 0 16px;
+  }
+  .country-identity {
+    gap: 7px;
+  }
+  .country-rank {
+    display: none;
+  }
+  .map-container {
+    min-height: 225px;
+  }
+  .map-caption {
+    font-size: 12px;
+  }
+  .geo-panel .panel-heading p {
+    max-width: none;
+  }
+  .geo-panel .compact-select {
+    font-size: 12px;
+  }
+  .insight-strip strong {
+    font-size: 13px;
+  }
+  .insight-strip > div > span {
+    font-size: 12px;
+  }
+  .insight-strip > button {
+    padding-left: 0;
+  }
+  .table-tools .compact-select {
+    font-size: 12px;
+  }
+  .table-footer > span:last-child {
+    font-size: 12px;
+  }
+  .page-footer {
+    font-size: 12px;
+  }
+  .page-footer > button {
+    font-size: 12px;
+  }
+}
+@media (max-width: 1450px) {
+  .topbar .breadcrumb {
+    display: none;
+  }
+  .topbar-right {
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .profile-button > span:not(.profile-avatar),
+  .profile-button > svg {
+    display: none;
+  }
+}
+@media (max-width: 1120px) {
+  .sidebar {
+    width: 210px;
+  }
+  .main-shell {
+    margin-left: 210px;
+  }
+  main {
+    padding: 22px 20px 0;
+  }
+}
+@media (max-width: 760px) {
+  .sidebar {
+    width: 250px;
+  }
+  .main-shell {
+    margin-left: 0;
+  }
+  main {
+    padding: 20px 16px 0;
+  }
+  .topbar {
+    padding: 0 16px;
+    gap: 12px;
+  }
+  .topbar-right {
+    gap: 7px;
+  }
+  .global-search {
+    width: 170px;
+  }
+  .global-search input {
+    font-size: 12px;
+  }
+  .motion-control {
+    padding: 6px;
+  }
+  .sidebar-footer {
+    font-size: 11px;
+  }
+}
+@media (max-width: 480px) {
+  .global-search {
+    flex: 1;
+    width: 0;
+  }
+  .global-search input {
+    width: 100%;
+  }
+  .topbar-start {
+    flex-shrink: 0;
+  }
+  .topbar-right {
+    gap: 5px;
+  }
+  .topbar {
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .channel-totals strong {
+    font-size: 20px;
+  }
+  .account-filter > span:not(.meta-logo) {
+    max-width: none;
+  }
+  .filter-left {
+    flex-wrap: wrap;
+  }
+  .filter-divider {
+    display: none;
+  }
+  .filter-bar {
+    padding: 10px;
+  }
+  .date-range {
+    font-size: 12px;
+  }
+  .form-two-col {
+    grid-template-columns: 1fr;
+  }
+}

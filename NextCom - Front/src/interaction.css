@@ -1,0 +1,90 @@
+/* Clear, intentional feedback for navigation and controls. */
+.animated-nav {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+}
+.nav-item.animated-nav.active {
+  background: transparent;
+  box-shadow: none;
+  color: white;
+}
+.nav-active-surface {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #8247f5, #945bf7);
+  box-shadow: 0 4px 18px #8247f52a;
+  pointer-events: none;
+}
+.motion-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--purple-muted);
+  background: var(--purple-subtle);
+  color: var(--purple-text);
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+html[data-motion='full'] button:not(.animated-nav):not(:disabled) {
+  transition:
+    translate 260ms var(--ease-next),
+    scale 180ms var(--ease-next),
+    background-color 220ms,
+    color 220ms,
+    border-color 220ms,
+    box-shadow 260ms;
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-motion='full']
+    :is(
+      [data-slot='button'],
+      .workspace,
+      .account-filter,
+      .motion-control,
+      .profile-button,
+      .icon-button
+    ):not(:disabled):hover {
+    translate: 0 -3px;
+    box-shadow: 0 6px 16px #8247f520;
+  }
+  html[data-motion='full'] :is(.channel-row, .country-row, .all-countries):hover {
+    translate: 4px 0;
+    background: var(--purple-subtle);
+  }
+  html[data-motion='full'] .nav-item:hover > svg {
+    transform: rotate(-9deg) scale(1.13);
+  }
+  html[data-motion='full'] .export-button:hover {
+    box-shadow: 0 6px 24px #8247f54d;
+  }
+}
+html[data-motion='full'] button:not(.animated-nav):not(:disabled):active {
+  translate: 0 1px;
+  scale: 0.94;
+}
+html[data-motion='reduced'] {
+  scroll-behavior: auto !important;
+}
+@media (max-width: 1120px) {
+  .motion-control span {
+    display: none;
+  }
+}
+@media (max-width: 480px) {
+  .global-search {
+    width: 110px;
+  }
+  .motion-control {
+    padding: 6px;
+  }
+}
+@media (max-width: 360px) {
+  .global-search {
+    width: 82px;
+  }
+}

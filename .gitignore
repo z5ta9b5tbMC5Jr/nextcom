@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.local
+*.log
+test-results/
+playwright-report/
+.artifacts/
+*.tsbuildinfo
+meta-ads-api-docs-md/

@@ -90,6 +90,31 @@ Endpoints atuais:
 
 A porta padrão é 3001. Se alterar `PORT`, atualize também o proxy em `NextCom - Front/vite.config.ts`. O backend é uma base local; autenticação, banco, OAuth, permissões e sincronização da API Meta serão implementados na próxima fase. Rascunhos atuais são locais ao navegador e não são dados de servidor.
 
+## Importação CSV e assistente de análise
+
+A integração nativa com a Meta continua em espera. O painel **Integrações** aceita CSVs exportados do Gerenciador de Anúncios e reconhece nomes comuns de colunas em português e inglês. O backend interpreta o arquivo com regras determinísticas, valida até 5 MB e 20 mil linhas e apresenta totais, campanhas, datas, países, regiões, canais e horários quando o relatório contém esses recortes. CSV sem país, hora ou outra dimensão continua válido; a NextCom informa quando o dado não está disponível em vez de inventá-lo.
+
+Nesta fase, o dashboard principal continua usando os dados demonstrativos. O resumo importado é mostrado no painel de integrações durante a sessão e não é persistido. Ainda não há contas de usuário, banco ou isolamento multiusuário.
+
+O assistente é um protótipo de análise única, executado no backend pela API de chat da OpenRouter. Ele recebe apenas o resumo agregado selecionado (totais e recortes limitados de campanha, região, canal e tempo), nunca o arquivo bruto. A interface exige consentimento antes da chamada e informa que conteúdo empresarial será enviado à OpenRouter e ao modelo escolhido. Evite incluir nomes que revelem dados pessoais ou informações confidenciais. As respostas são sugestões sujeitas a erro; o agente não altera nem publica campanhas.
+
+Configure no `.env` da raiz:
+
+- `OPENROUTER_API_KEY`: chave criada no painel da OpenRouter. Permanece somente no servidor.
+- `OPENROUTER_MODEL`: identificador de modelo disponibilizado pela OpenRouter; o exemplo inicial usa `openai/gpt-4o-mini`.
+- `OPENROUTER_SITE_URL`: opcional, URL pública para atribuição do app.
+- `NEXTCOM_ALLOWED_ORIGINS`: origens do frontend separadas por vírgula. Em produção, substitua as origens locais por seus domínios HTTPS.
+
+O arquivo `.env.example` contém apenas valores vazios/de demonstração. Nunca copie uma chave real para o frontend, para um `VITE_*`, commit, issue ou log. A NextCom não consegue criar sua chave: gere uma no painel da OpenRouter e informe-a somente no `.env` local do servidor.
+
+| Rota                          | Uso                                                              |
+| ----------------------------- | ---------------------------------------------------------------- |
+| `GET /api/ai/status`          | Estado configurado e identificador do modelo, sem expor a chave  |
+| `POST /api/imports/meta-csv`  | Recebe texto CSV UTF-8 e devolve um resumo calculado no servidor |
+| `POST /api/ai/analyze-import` | Envia um resumo validado ao modelo configurado                   |
+
+Os endpoints atuais não gravam o CSV nem o resumo no servidor. A análise tem limite local de quatro chamadas por minuto por IP, timeout e limite de resposta. O backend escuta em loopback por padrão; autenticação, persistência segura por usuário, gestão de consentimento auditável, exclusão de dados e publicação multiusuário ainda precisam ser implementadas antes de hospedar a aplicação para terceiros. Para a futura versão multiusuário, tokens OpenRouter pessoais e conexões de dados devem ficar em armazenamento de credenciais criptografado, nunca compartilhados no `.env` do servidor.
+
 ## Verificação e produção
 
 O frontend possui um sistema compartilhado de animações de entrada, saída, interação e atualização de dados, com suporte a `prefers-reduced-motion`. Consulte [o guia de movimento](docs/motion.md) ao criar componentes. A preferência do projeto está registrada em `AGENTS.md`.

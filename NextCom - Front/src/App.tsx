@@ -48,6 +48,7 @@ import { CampaignTable } from '@/components/CampaignTable'
 import { CountryFlag } from '@/components/CountryFlag'
 import { CountryPerformanceDialog } from '@/components/CountryPerformanceDialog'
 import { CountryDetailsDialog } from '@/components/CountryDetailsDialog'
+import { CsvImportPanel } from '@/components/CsvImportPanel'
 import {
   channels,
   currency,
@@ -667,7 +668,15 @@ export default function App() {
           if (!open) setModal(null)
         }}
       >
-        <DialogContent className={displayModal === 'countries' ? 'countries-dialog' : ''}>
+        <DialogContent
+          className={
+            displayModal === 'countries'
+              ? 'countries-dialog'
+              : displayModal === 'integrations'
+                ? 'integration-dialog'
+                : ''
+          }
+        >
           {displayModal !== 'countries' && (
             <DialogHeader>
               <DialogTitle>
@@ -836,6 +845,7 @@ export default function App() {
                   TikTok Ads <small>Futuro</small>
                 </span>
               </div>
+              <CsvImportPanel />
             </>
           )}
           {displayModal === 'settings' && (

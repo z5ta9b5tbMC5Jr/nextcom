@@ -5,12 +5,21 @@ import { Button } from '@/components/ui/button'
 import { MotionPanel } from '@/components/motion/MotionPanel'
 import { useNextMotion } from '@/lib/motion'
 
-type Group = { name: string; spend: number; results: number | null; conversionValue?: number | null }
+type Group = {
+  name: string
+  spend: number
+  results: number | null
+  conversionValue?: number | null
+  resultTypes?: string[]
+}
 type Summary = {
   filename: string
   rows: number
   skippedRows: number
   rowsWithoutDate: number
+  periodAggregated: boolean
+  entityLabel: string
+  resultsLabel: string
   dateRange: { from: string; to: string } | null
   currency: string | null
   totals: {
@@ -24,6 +33,7 @@ type Summary = {
     roas: number | null
   }
   campaigns: Group[]
+  resultsByType: Array<{ type: string; spend: number; results: number; cpa: number | null }>
   countries: Group[]
   regions: Group[]
   channels: Group[]
@@ -74,13 +84,17 @@ export function CsvImportPanel() {
   const [error, setError] = useState('')
   const [consented, setConsented] = useState(false)
   const [aiReady, setAiReady] = useState<boolean | null>(null)
+  const [aiModel, setAiModel] = useState('')
   const [inputKey, setInputKey] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
     fetch('/api/ai/status', { signal: controller.signal })
-      .then((response) => response.json() as Promise<{ configured?: boolean }>)
-      .then((status) => setAiReady(status.configured === true))
+      .then((response) => response.json() as Promise<{ configured?: boolean; model?: string }>)
+      .then((status) => {
+        setAiReady(status.configured === true)
+        setAiModel(typeof status.model === 'string' ? status.model.trim().slice(0, 120) : '')
+      })
       .catch(() => setAiReady(false))
     return () => controller.abort()
   }, [])
@@ -213,13 +227,20 @@ export function CsvImportPanel() {
                 `${summary.rowsWithoutDate} linha(s) não entraram no gráfico temporal porque a data não pôde ser lida.`}
             </p>
           )}
+          {summary.periodAggregated && (
+            <p className="csv-temporal-note" role="note">
+              Este relatório traz totais consolidados do intervalo por{' '}
+              {summary.entityLabel.toLocaleLowerCase('pt-BR')}; ele não contém métricas diárias, então não é
+              possível montar uma tendência por dia.
+            </p>
+          )}
           <div className="csv-metrics">
             <div>
               <span>Valor gasto</span>
               <strong>{amount(summary.totals.spend, summary.currency)}</strong>
             </div>
             <div>
-              <span>Resultados</span>
+              <span>{summary.resultsLabel}</span>
               <strong>{integer(summary.totals.results)}</strong>
             </div>
             <div>
@@ -255,6 +276,23 @@ export function CsvImportPanel() {
               </span>
             )}
           </div>
+          {summary.resultsByType.length > 1 && (
+            <section className="csv-result-breakdown">
+              <h4>Indicadores de resultado diferentes</h4>
+              <p>
+                Para evitar somar ações distintas, os resultados e o custo por resultado acima ficam
+                separados.
+              </p>
+              {summary.resultsByType.map((item) => (
+                <div className="csv-group-row" key={item.type}>
+                  <span title={item.type}>
+                    {item.type} · {integer(item.results)} resultados
+                  </span>
+                  <strong>{amount(item.cpa, summary.currency)} por resultado</strong>
+                </div>
+              ))}
+            </section>
+          )}
           {daily.length > 1 && (
             <section className="csv-daily">
               <h4>Investimento por dia</h4>
@@ -299,7 +337,9 @@ export function CsvImportPanel() {
           )}
           <div className="csv-dimensions">
             <section>
-              <h4>Campanhas ({summary.campaigns.length})</h4>
+              <h4>
+                {summary.entityLabel} ({summary.campaigns.length})
+              </h4>
               {summary.campaigns.slice(0, 5).map((item) => (
                 <div className="csv-group-row" key={item.name}>
                   <span title={item.name}>{item.name}</span>
@@ -356,7 +396,8 @@ export function CsvImportPanel() {
             </label>
             {aiReady === false && (
               <p className="csv-ai-config-note" role="status">
-                Adicione OPENROUTER_API_KEY ao .env do servidor e reinicie a API para ativar as análises.
+                {aiModel ? `Modelo detectado: ${aiModel}. ` : ''}
+                Configure OPENROUTER_API_KEY no .env da raiz e reinicie a API para ativar as análises.
               </p>
             )}
             <Button onClick={() => void analyze()} disabled={!consented || busy !== null || aiReady !== true}>

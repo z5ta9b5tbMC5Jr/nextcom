@@ -2,6 +2,8 @@ import { parse } from 'csv-parse/sync'
 
 export type ImportedRow = {
   date: string | null
+  periodStart: string | null
+  periodEnd: string | null
   hour: string | null
   campaign: string
   adSet: string | null
@@ -23,6 +25,9 @@ export type ImportSummary = {
   rows: number
   skippedRows: number
   rowsWithoutDate: number
+  periodAggregated: boolean
+  entityLabel: string
+  resultsLabel: string
   dateRange: { from: string; to: string } | null
   currency: string | null
   totals: {
@@ -35,7 +40,14 @@ export type ImportSummary = {
     cpa: number | null
     roas: number | null
   }
-  campaigns: Array<{ name: string; spend: number; results: number | null; conversionValue: number | null }>
+  campaigns: Array<{
+    name: string
+    spend: number
+    results: number | null
+    conversionValue: number | null
+    resultTypes: string[]
+  }>
+  resultsByType: Array<{ type: string; spend: number; results: number; cpa: number | null }>
   countries: Array<{ name: string; spend: number; results: number | null }>
   regions: Array<{ name: string; spend: number; results: number | null }>
   channels: Array<{ name: string; spend: number; results: number | null }>
@@ -54,7 +66,16 @@ const normalize = (value: string) =>
     .trim()
 
 const headerAliases: Record<string, string[]> = {
-  date: ['reporting starts', 'data inicio', 'inicio do relatorio', 'data', 'date', 'day'],
+  date: ['data', 'date', 'day', 'report date'],
+  dateStart: [
+    'reporting starts',
+    'data inicio',
+    'inicio do relatorio',
+    'inicio dos relatorios',
+    'start date',
+    'date start',
+  ],
+  dateEnd: ['reporting ends', 'encerramento dos relatorios', 'end date', 'date end'],
   hour: ['hour of day', 'hora do dia', 'hour', 'hora', 'time', 'horario'],
   campaign: ['campaign name', 'nome da campanha', 'campanha', 'campaign'],
   adSet: ['ad set name', 'nome do conjunto de anuncios', 'conjunto de anuncios', 'ad set'],
@@ -153,6 +174,12 @@ function getNumber(record: string[], index: number | undefined): number | null {
   return index === undefined ? null : parseNumber(record[index])
 }
 
+function getOptionalMetric(record: string[], index: number | undefined): number | null {
+  if (index === undefined) return null
+  const raw = record[index]?.trim()
+  return raw ? parseNumber(raw) : 0
+}
+
 export function parseMetaCsv(
   csv: string,
   filename = 'export.csv',
@@ -180,21 +207,32 @@ export function parseMetaCsv(
     throw new CsvImportError('O CSV precisa conter um cabeçalho e ao menos uma linha de dados.')
   if (records.length > 20_001) throw new CsvImportError('O arquivo ultrapassa o limite de 20 mil linhas.')
   const columns = resolveColumns(records[0] ?? [])
-  if (columns.campaign === undefined || columns.spend === undefined) {
+  if (
+    (columns.campaign === undefined && columns.adSet === undefined && columns.ad === undefined) ||
+    columns.spend === undefined
+  ) {
     throw new CsvImportError(
-      'Não encontrei as colunas de campanha e valor gasto. Use um CSV de campanhas exportado pelo Meta Ads.',
+      'Não encontrei uma coluna de identificação (campanha, conjunto ou anúncio) e valor gasto. Confira se o CSV contém essas colunas.',
     )
   }
 
   const rows: ImportedRow[] = []
+  const entityLabel =
+    columns.campaign !== undefined
+      ? 'Campanhas'
+      : columns.adSet !== undefined
+        ? 'Conjuntos e anúncios'
+        : 'Anúncios'
   let invalidRows = 0
   let rowsWithoutDate = 0
   for (let i = 1; i < records.length; i++) {
     const record = records[i] ?? []
-    const campaign = textAt(record, columns.campaign)
+    const campaign =
+      textAt(record, columns.campaign) ??
+      ([textAt(record, columns.adSet), textAt(record, columns.ad)].filter(Boolean).join(' · ') || null)
     const spend = getNumber(record, columns.spend)
     const invalidMetric = ['results', 'conversionValue', 'impressions', 'clicks'].some((key) => {
-      const value = getNumber(record, columns[key])
+      const value = getOptionalMetric(record, columns[key])
       return value !== null && value < 0
     })
     if (!campaign && record.every((cell) => !cell.trim())) continue
@@ -205,10 +243,18 @@ export function parseMetaCsv(
     const currencyHeader = records[0]?.[columns.spend] ?? ''
     const currencyCode = currencyHeader.match(/\b(BRL|USD|EUR|GBP|CAD|AUD|MXN|ARS|CLP|JPY)\b/i)?.[1]
     const rawDate = textAt(record, columns.date)
-    const parsedDate = parseDate(rawDate)
-    if (!parsedDate && columns.date !== undefined) rowsWithoutDate++
+    const periodStart = parseDate(textAt(record, columns.dateStart))
+    const periodEnd = parseDate(textAt(record, columns.dateEnd))
+    const parsedDate = parseDate(rawDate) ?? (periodStart && periodStart === periodEnd ? periodStart : null)
+    if (
+      (columns.date !== undefined && Boolean(rawDate) && !parseDate(rawDate)) ||
+      (columns.dateStart !== undefined && columns.dateEnd !== undefined && (!periodStart || !periodEnd))
+    )
+      rowsWithoutDate++
     rows.push({
       date: parsedDate,
+      periodStart,
+      periodEnd,
       hour: parseHour(textAt(record, columns.hour)) ?? parseHour(rawDate),
       campaign,
       adSet: textAt(record, columns.adSet),
@@ -218,25 +264,34 @@ export function parseMetaCsv(
       channel: textAt(record, columns.channel),
       currency: (textAt(record, columns.currency) ?? currencyCode)?.toUpperCase() ?? null,
       spend,
-      results: getNumber(record, columns.results),
+      results: getOptionalMetric(record, columns.results),
       resultType: textAt(record, columns.resultType),
-      conversionValue: getNumber(record, columns.conversionValue),
-      impressions: getNumber(record, columns.impressions),
-      clicks: getNumber(record, columns.clicks),
+      conversionValue: getOptionalMetric(record, columns.conversionValue),
+      impressions: getOptionalMetric(record, columns.impressions),
+      clicks: getOptionalMetric(record, columns.clicks),
     })
   }
   if (!rows.length)
     throw new CsvImportError(
-      'Nenhuma linha v?lida encontrada. Confira os nomes da campanha e do valor gasto.',
+      'Nenhuma linha válida encontrada. Confira os nomes da campanha e do valor gasto.',
     )
 
   const aggregate = (key: 'campaign' | 'country' | 'region' | 'channel') => {
-    const group = new Map<string, { spend: number; results: number | null; conversionValue: number | null }>()
+    const group = new Map<
+      string,
+      { spend: number; results: number | null; conversionValue: number | null; resultTypes: Set<string> }
+    >()
     for (const row of rows) {
       const name = row[key]
       if (!name) continue
-      const current = group.get(name) ?? { spend: 0, results: 0, conversionValue: 0 }
+      const current = group.get(name) ?? {
+        spend: 0,
+        results: 0,
+        conversionValue: 0,
+        resultTypes: new Set<string>(),
+      }
       current.spend += row.spend
+      if (row.results !== null && row.results > 0) current.resultTypes.add(row.resultType ?? 'Sem indicador')
       current.results =
         current.results === null || row.results === null ? null : current.results + row.results
       current.conversionValue =
@@ -246,7 +301,13 @@ export function parseMetaCsv(
       group.set(name, current)
     }
     return [...group.entries()]
-      .map(([name, totals]) => ({ name, ...totals }))
+      .map(([name, totals]) => ({
+        name,
+        spend: totals.spend,
+        results: totals.resultTypes.size > 1 ? null : totals.results,
+        conversionValue: totals.conversionValue,
+        resultTypes: [...totals.resultTypes],
+      }))
       .sort((a, b) => b.spend - a.spend)
       .slice(0, 50)
   }
@@ -270,6 +331,20 @@ export function parseMetaCsv(
       clicks: 0 as number | null,
     },
   )
+  const resultTypeMap = new Map<string, { spend: number; results: number }>()
+  for (const row of rows) {
+    if (row.results === null || (row.results === 0 && !row.resultType)) continue
+    const type = row.resultType ?? 'Sem indicador'
+    const current = resultTypeMap.get(type) ?? { spend: 0, results: 0 }
+    current.spend += row.spend
+    current.results += row.results
+    resultTypeMap.set(type, current)
+  }
+  const resultsByType = [...resultTypeMap.entries()]
+    .map(([type, value]) => ({ type, ...value, cpa: value.results ? value.spend / value.results : null }))
+    .sort((a, b) => b.spend - a.spend)
+  const mixedResultTypes = resultsByType.length > 1
+  const resultValue = mixedResultTypes ? null : total.results
   const dates = rows
     .map((row) => row.date)
     .filter((date): date is string => date !== null)
@@ -289,6 +364,12 @@ export function parseMetaCsv(
         : value.conversionValue + row.conversionValue
     dailyMap.set(row.date, value)
   }
+  const rangeStarts = rows.map((row) => row.periodStart).filter((value): value is string => value !== null)
+  const rangeEnds = rows.map((row) => row.periodEnd).filter((value): value is string => value !== null)
+  const dateValues = [...dates, ...rangeStarts, ...rangeEnds].sort()
+  const periodAggregated = rows.some(
+    (row) => row.periodStart && row.periodEnd && row.periodStart !== row.periodEnd,
+  )
   const currencies = [
     ...new Set(rows.map((row) => row.currency).filter((value): value is string => value !== null)),
   ]
@@ -299,12 +380,19 @@ export function parseMetaCsv(
       rows: rows.length,
       skippedRows: invalidRows,
       rowsWithoutDate,
-      dateRange: dates.length ? { from: dates[0]!, to: dates[dates.length - 1]! } : null,
+      periodAggregated,
+      entityLabel,
+      resultsLabel: mixedResultTypes
+        ? 'Resultados (tipos diferentes)'
+        : (resultsByType[0]?.type ?? 'Resultados'),
+      resultsByType,
+      dateRange: dateValues.length ? { from: dateValues[0]!, to: dateValues[dateValues.length - 1]! } : null,
       currency: currencies.length === 1 ? currencies[0]! : null,
       totals: {
         ...total,
+        results: resultValue,
         ctr: total.impressions && total.clicks !== null ? (total.clicks / total.impressions) * 100 : null,
-        cpa: total.results ? total.spend / total.results : null,
+        cpa: resultValue ? total.spend / resultValue : null,
         roas: total.conversionValue !== null && total.spend ? total.conversionValue / total.spend : null,
       },
       campaigns: aggregate('campaign'),

@@ -5,6 +5,8 @@ dist/
 !.env.example
 *.local
 *.log
+*.csv
+*.har
 test-results/
 playwright-report/
 .artifacts/

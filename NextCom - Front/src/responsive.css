@@ -660,3 +660,69 @@ main {
     grid-template-columns: 1fr;
   }
 }
+/* NextAI: wrap content instead of scaling text to fit. */
+@media (max-width: 1100px) {
+  .imported-dashboard .imported-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nextai-page .nextai-suggestions {
+    gap: 8px;
+  }
+}
+@media (max-width: 760px) {
+  .nextai-page .nextai-welcome {
+    padding: 18px 0 26px;
+  }
+  .nextai-page .nextai-suggestions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nextai-page .nextai-suggestions button {
+    padding: 16px;
+  }
+  .nextai-page .nextai-suggestions button > svg:first-child {
+    margin-bottom: 12px;
+  }
+  .nextai-page .nextai-compose-tools > div {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .nextai-page .nextai-model {
+    display: none;
+  }
+  .nextai-page .nextai-message.user {
+    margin-left: 0;
+  }
+  .nextai-page .nextai-badge {
+    display: none;
+  }
+  .imported-dashboard .imported-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .imported-dashboard .imported-source {
+    flex-wrap: wrap;
+  }
+  .imported-dashboard .imported-panel {
+    padding: 16px;
+  }
+  .imported-dashboard .imported-table-heading {
+    flex-direction: column;
+  }
+}
+@media (max-width: 480px) {
+  .imported-dashboard .imported-kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .imported-dashboard .imported-row {
+    flex-wrap: wrap;
+  }
+  .imported-dashboard .imported-row strong {
+    flex-basis: 100%;
+  }
+  .imported-dashboard .imported-table th,
+  .imported-dashboard .imported-table td {
+    padding: 12px 5px;
+  }
+  .nextai-page .nextai-context {
+    align-items: flex-start;
+  }
+}

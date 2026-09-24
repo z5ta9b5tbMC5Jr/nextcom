@@ -9,3 +9,4 @@
 - Testar entradas/saídas reais, teclado, modo de movimento reduzido e layout mobile ao alterar esse comportamento. Verificar a build.
 - Frontend em `NextCom - Front`; backend em `NextCom - Back`. Segredos apenas no `.env` da raiz, nunca em variáveis `VITE_`.
 - Preservar a legibilidade responsiva: textos de apoio com pelo menos 12 px, conteúdo principal com 13–14 px e KPIs com pelo menos 26 px. Reorganizar colunas conforme a largura do conteúdo usando `responsive.css`; não diminuir fontes nem aplicar zoom/scale global para fazer o dashboard caber. No celular, valores monetários longos ocupam a linha inteira. Validar cortes, sobreposições e rolagem horizontal de 320 a 1920 px.
+- Para qualquer alteração na integração OpenRouter, consultar primeiro `docs/openrouter-integration.md` e a documentação oficial atual em https://openrouter.ai/docs/llms-full.txt; confirmar compatibilidade do endpoint, modelo e provedor, nunca expor segredos e validar erros/saídas no backend.

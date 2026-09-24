@@ -36,6 +36,8 @@ type Props = {
   onMetricChange?: (metric: GeoMetric) => void
   selectedCountry?: string | null
   onCountrySelect?: (id: string | null) => void
+  availableMetrics?: GeoMetric[]
+  formatValue?: typeof geoFormat
 }
 /** Cada país é um path SVG gerado a partir de TopoJSON local (Natural Earth). */
 export function GeoPerformanceMap({
@@ -44,6 +46,8 @@ export function GeoPerformanceMap({
   onMetricChange,
   selectedCountry,
   onCountrySelect,
+  availableMetrics,
+  formatValue = geoFormat,
 }: Props) {
   const { presence } = useNextMotion()
   const [localMetric, setLocalMetric] = useState<GeoMetric>(metric)
@@ -82,11 +86,13 @@ export function GeoPerformanceMap({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(geoLabels).map(([key, label]) => (
-              <SelectItem key={key} value={key}>
-                {label}
-              </SelectItem>
-            ))}
+            {Object.entries(geoLabels)
+              .filter(([key]) => !availableMetrics || availableMetrics.includes(key as GeoMetric))
+              .map(([key, label]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
@@ -114,7 +120,7 @@ export function GeoPerformanceMap({
                   vectorEffect="non-scaling-stroke"
                   role="button"
                   tabIndex={0}
-                  aria-label={`${name}: ${country ? geoFormat(currentMetric, country[currentMetric]) : 'sem dados'}`}
+                  aria-label={`${name}: ${country ? formatValue(currentMetric, country[currentMetric]) : 'sem dados'}`}
                   aria-pressed={selected === id}
                   onMouseMove={(e) => {
                     const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect()
@@ -153,7 +159,7 @@ export function GeoPerformanceMap({
             >
               <strong>{hover.name}</strong>
               <span>
-                {hoverData ? geoFormat(currentMetric, hoverData[currentMetric]) : 'Sem dados neste período'}
+                {hoverData ? formatValue(currentMetric, hoverData[currentMetric]) : 'Sem dados neste período'}
               </span>
             </motion.div>
           )}
@@ -201,7 +207,7 @@ export function GeoPerformanceMap({
               <span>{selectedData?.flag ?? '◎'}</span>{' '}
               <strong>{selectedData?.name ?? selectedFeature?.properties.name}</strong>
               <span>
-                {selectedData ? geoFormat(currentMetric, selectedData[currentMetric]) : 'Sem dados'}
+                {selectedData ? formatValue(currentMetric, selectedData[currentMetric]) : 'Sem dados'}
               </span>
               <button onClick={() => choose(null)} aria-label="Limpar país selecionado">
                 ×

@@ -178,11 +178,18 @@
   font-variant-numeric: tabular-nums;
 }
 .csv-daily h4,
-.csv-dimensions h4 {
+.csv-dimensions h4,
+.csv-result-breakdown h4 {
   margin-bottom: 10px;
   color: var(--text-secondary, #a1a1aa);
   font-size: 12px;
   font-weight: 500;
+}
+.csv-result-breakdown > p {
+  margin-bottom: 8px;
+  color: var(--text-secondary, #a1a1aa);
+  font-size: 12px;
+  line-height: 1.6;
 }
 .csv-bars {
   display: flex;
@@ -257,7 +264,8 @@
   border-top: 1px solid var(--border);
 }
 .csv-quality-warning,
-.csv-ai-config-note {
+.csv-ai-config-note,
+.csv-temporal-note {
   padding: 10px 12px;
   color: #f4ba43;
   background: rgb(244 186 67 / 8%);

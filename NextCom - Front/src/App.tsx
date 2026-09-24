@@ -49,6 +49,10 @@ import { CountryFlag } from '@/components/CountryFlag'
 import { CountryPerformanceDialog } from '@/components/CountryPerformanceDialog'
 import { CountryDetailsDialog } from '@/components/CountryDetailsDialog'
 import { CsvImportPanel } from '@/components/CsvImportPanel'
+import { AIAssistantInterface } from '@/components/ui/ai-assistant-interface'
+import { ImportedDashboard } from '@/components/ImportedDashboard'
+import { useNextAI } from '@/lib/use-nextai'
+import { exportImportedSummary } from '@/lib/import-data'
 import {
   channels,
   currency,
@@ -101,6 +105,7 @@ function Logo() {
 }
 
 export default function App() {
+  const nextai = useNextAI()
   const { reduced, presence } = useNextMotion()
   const { mode: motionMode, setMode: setMotionMode } = useMotionPreferences()
   const [section, setSection] = useState('main')
@@ -175,13 +180,20 @@ export default function App() {
   }, [toast])
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
   const exportData = () => {
+    if (nextai.dataset) {
+      exportImportedSummary(nextai.dataset.summary)
+      setToast('Resumo importado exportado em CSV.')
+      return
+    }
     exportCampaignCsv(rows, days)
     setToast('Relatório demonstrativo exportado em CSV.')
   }
   const navigate = (id: string) => {
-    setSection(id === 'campanhas' ? 'campanhas' : 'main')
+    setSection(id === 'nextai' ? 'nextai' : id === 'campanhas' ? 'campanhas' : 'main')
+    setModal(null)
     setSidebar(false)
-    document.getElementById(id)?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'start' })
+    const target = document.getElementById(id) ?? document.getElementById('main')
+    target?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'start' })
   }
   const openModal = (value: Modal) => {
     setSidebar(false)
@@ -301,7 +313,7 @@ export default function App() {
             </NavButton>
             <NavButton active={!modal && section === 'campanhas'} onClick={() => navigate('campanhas')}>
               <Megaphone size={18} />
-              Campanhas<span className="nav-count">5</span>
+              Campanhas<span className="nav-count">{nextai.dataset?.summary.campaigns.length ?? 5}</span>
             </NavButton>
             <NavButton active={modal === 'planner'} onClick={() => openModal('planner')}>
               <CalendarDays size={18} />
@@ -310,6 +322,10 @@ export default function App() {
             <NavButton active={modal === 'reports'} onClick={() => openModal('reports')}>
               <FileBarChart2 size={18} />
               Relatórios
+            </NavButton>
+            <NavButton active={!modal && section === 'nextai'} onClick={() => navigate('nextai')}>
+              <Sparkles size={18} />
+              NextAI
             </NavButton>
           </nav>
           <span className="nav-label connections-label">CONEXÕES</span>
@@ -367,7 +383,9 @@ export default function App() {
               </button>
               <span className="breadcrumb">
                 Workspace <ChevronRight size={12} />
-                <strong>Visão geral</strong>
+                <strong>
+                  {section === 'nextai' ? 'NextAI' : nextai.dataset ? 'Dados importados' : 'Visão geral'}
+                </strong>
               </span>
             </div>
             <div className="topbar-right">
@@ -501,164 +519,184 @@ export default function App() {
             </div>
           </header>
           <main id="main">
-            <div className="page-heading">
-              <div>
-                <div className="eyebrow">
-                  <span /> SEU PRÓXIMO RESULTADO COMEÇA AQUI
-                </div>
-                <h1>
-                  Dashboard<span>.</span>
-                </h1>
-                <p>Uma visão clara das suas campanhas. Cada detalhe, uma oportunidade.</p>
-              </div>
-              <div className="heading-actions">
-                <span className="demo-indicator">
-                  <span />
-                  Dados demonstrativos
-                </span>
-                <Button className="export-button" onClick={exportData}>
-                  <ArrowDownToLine size={15} />
-                  Exportar dados
-                </Button>
-              </div>
-            </div>
-            <div className="filter-bar">
-              <div className="filter-left">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="account-filter">
-                      <span className="meta-logo">∞</span>
-                      <span>Conta de demonstração</span>
-                      <ChevronDown size={13} />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-72">
-                    <div className="workspace-popover">
-                      <strong>
-                        Conta de demonstração <Check size={14} />
-                      </strong>
-                      <p>Dados fictícios em BRL. Nenhuma conta de anúncios conectada.</p>
-                      <Button variant="outline" onClick={() => openModal('integrations')}>
-                        <Link2 size={14} />
-                        Ver integração Meta
+            <AnimatePresence mode="wait" initial={false}>
+              {section === 'nextai' ? (
+                <motion.div key="nextai" {...presence}>
+                  <AIAssistantInterface chat={nextai} onDashboard={() => navigate('main')} />
+                </motion.div>
+              ) : nextai.dataset ? (
+                <motion.div key="imported" {...presence}>
+                  <ImportedDashboard
+                    chat={nextai}
+                    onChat={() => navigate('nextai')}
+                    search={search}
+                    onSearch={setSearch}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div key="demo" {...presence}>
+                  <div className="page-heading">
+                    <div>
+                      <div className="eyebrow">
+                        <span /> SEU PRÓXIMO RESULTADO COMEÇA AQUI
+                      </div>
+                      <h1>
+                        Dashboard<span>.</span>
+                      </h1>
+                      <p>Uma visão clara das suas campanhas. Cada detalhe, uma oportunidade.</p>
+                    </div>
+                    <div className="heading-actions">
+                      <span className="demo-indicator">
+                        <span />
+                        Dados demonstrativos
+                      </span>
+                      <Button className="export-button" onClick={exportData}>
+                        <ArrowDownToLine size={15} />
+                        Exportar dados
                       </Button>
                     </div>
-                  </PopoverContent>
-                </Popover>
-                <span className="filter-divider" />
-                <Select value={channel} onValueChange={(v) => setChannel(v as ChannelFilter)}>
-                  <SelectTrigger aria-label="Filtrar canal" className="channel-filter">
-                    <Layers3 size={14} />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os canais</SelectItem>
-                    {channels.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {channel !== 'all' && (
-                  <button
-                    className="reset-filter"
-                    onClick={() => setChannel('all')}
-                    aria-label="Limpar filtro de canal"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-              <div className="filter-right">
-                <span className="period-comparison">Comparado ao período anterior</span>
-                <Select value={String(days)} onValueChange={(value) => setDays(Number(value))}>
-                  <SelectTrigger aria-label="Período do dashboard" className="date-filter">
-                    <CalendarDays size={14} />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">Últimos 7 dias</SelectItem>
-                    <SelectItem value="14">Últimos 14 dias</SelectItem>
-                    <SelectItem value="30">Últimos 30 dias</SelectItem>
-                  </SelectContent>
-                </Select>
-                <span className="date-range">{dateLabel(dateOffset(-days + 1))} — 23 set, 2026</span>
-              </div>
-            </div>
-            <KpiCards total={totals} previous={previous} />
-            <div className="primary-grid">
-              <PerformanceChart rows={rows} />
-              <ChannelBreakdown rows={rows} onSelect={setChannel} />
-            </div>
-            <div className="geography-grid" id="geografia">
-              <GeoPerformanceMap
-                data={countryData}
-                metric={geoMetric}
-                onMetricChange={setGeoMetric}
-                selectedCountry={selectedCountry}
-                onCountrySelect={setSelectedCountry}
-              />
-              <MotionPanel className="panel countries-panel">
-                <div className="panel-heading">
-                  <div>
-                    <h2>
-                      Principais países <span className="count-badge">12</span>
-                    </h2>
-                    <p>Uma perspectiva além das fronteiras.</p>
                   </div>
-                  <Globe2 size={17} className="muted" />
-                </div>
-                <div className="country-table-head">
-                  <span>País</span>
-                  <span>{geoLabels[geoMetric]}</span>
-                </div>
-                {renderCountryRows()}
-                <button
-                  className="all-countries"
-                  onClick={() => {
-                    setCountrySearch('')
-                    openModal('countries')
-                  }}
-                >
-                  Explorar todos os países <ArrowRight size={14} />
-                </button>
-              </MotionPanel>
-            </div>
-            <div className="insight-strip">
-              <div className="insight-icon">
-                <Sparkles size={18} />
-              </div>
-              <div>
-                <strong>Seu investimento tem um mundo de possibilidades.</strong>
-                <span>
-                  O Brasil representa{' '}
-                  {decimal(ratio(countryData.find((c) => c.code === 'BR')!.spend, totals.spend) * 100)}% do
-                  gasto. Compare o custo por resultado entre países antes de redistribuir o orçamento.
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  setCountrySearch('')
-                  openModal('countries')
-                }}
-              >
-                Explorar países <ArrowUpRight size={15} />
-              </button>
-            </div>
-            <CampaignTable rows={rows} search={search} onSearchChange={setSearch} />
-            <footer className="page-footer">
-              <span>
-                © 2026 NextCom <span>by NextCorp Inc.</span>
-              </span>
-              <span>
-                <ShieldCheck size={13} />
-                Feito para dar mais sentido aos seus dados.
-              </span>
-              <button onClick={() => openModal('help')}>
-                Sobre o projeto <ArrowUpRight size={12} />
-              </button>
-            </footer>
+                  <div className="filter-bar">
+                    <div className="filter-left">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="account-filter">
+                            <span className="meta-logo">∞</span>
+                            <span>Conta de demonstração</span>
+                            <ChevronDown size={13} />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-72">
+                          <div className="workspace-popover">
+                            <strong>
+                              Conta de demonstração <Check size={14} />
+                            </strong>
+                            <p>Dados fictícios em BRL. Nenhuma conta de anúncios conectada.</p>
+                            <Button variant="outline" onClick={() => openModal('integrations')}>
+                              <Link2 size={14} />
+                              Ver integração Meta
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <span className="filter-divider" />
+                      <Select value={channel} onValueChange={(v) => setChannel(v as ChannelFilter)}>
+                        <SelectTrigger aria-label="Filtrar canal" className="channel-filter">
+                          <Layers3 size={14} />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os canais</SelectItem>
+                          {channels.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {channel !== 'all' && (
+                        <button
+                          className="reset-filter"
+                          onClick={() => setChannel('all')}
+                          aria-label="Limpar filtro de canal"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="filter-right">
+                      <span className="period-comparison">Comparado ao período anterior</span>
+                      <Select value={String(days)} onValueChange={(value) => setDays(Number(value))}>
+                        <SelectTrigger aria-label="Período do dashboard" className="date-filter">
+                          <CalendarDays size={14} />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="7">Últimos 7 dias</SelectItem>
+                          <SelectItem value="14">Últimos 14 dias</SelectItem>
+                          <SelectItem value="30">Últimos 30 dias</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="date-range">{dateLabel(dateOffset(-days + 1))} — 23 set, 2026</span>
+                    </div>
+                  </div>
+                  <KpiCards total={totals} previous={previous} />
+                  <div className="primary-grid">
+                    <PerformanceChart rows={rows} />
+                    <ChannelBreakdown rows={rows} onSelect={setChannel} />
+                  </div>
+                  <div className="geography-grid" id="geografia">
+                    <GeoPerformanceMap
+                      data={countryData}
+                      metric={geoMetric}
+                      onMetricChange={setGeoMetric}
+                      selectedCountry={selectedCountry}
+                      onCountrySelect={setSelectedCountry}
+                    />
+                    <MotionPanel className="panel countries-panel">
+                      <div className="panel-heading">
+                        <div>
+                          <h2>
+                            Principais países <span className="count-badge">12</span>
+                          </h2>
+                          <p>Uma perspectiva além das fronteiras.</p>
+                        </div>
+                        <Globe2 size={17} className="muted" />
+                      </div>
+                      <div className="country-table-head">
+                        <span>País</span>
+                        <span>{geoLabels[geoMetric]}</span>
+                      </div>
+                      {renderCountryRows()}
+                      <button
+                        className="all-countries"
+                        onClick={() => {
+                          setCountrySearch('')
+                          openModal('countries')
+                        }}
+                      >
+                        Explorar todos os países <ArrowRight size={14} />
+                      </button>
+                    </MotionPanel>
+                  </div>
+                  <div className="insight-strip">
+                    <div className="insight-icon">
+                      <Sparkles size={18} />
+                    </div>
+                    <div>
+                      <strong>Seu investimento tem um mundo de possibilidades.</strong>
+                      <span>
+                        O Brasil representa{' '}
+                        {decimal(ratio(countryData.find((c) => c.code === 'BR')!.spend, totals.spend) * 100)}%
+                        do gasto. Compare o custo por resultado entre países antes de redistribuir o
+                        orçamento.
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setCountrySearch('')
+                        openModal('countries')
+                      }}
+                    >
+                      Explorar países <ArrowUpRight size={15} />
+                    </button>
+                  </div>
+                  <CampaignTable rows={rows} search={search} onSearchChange={setSearch} />
+                  <footer className="page-footer">
+                    <span>
+                      © 2026 NextCom <span>by NextCorp Inc.</span>
+                    </span>
+                    <span>
+                      <ShieldCheck size={13} />
+                      Feito para dar mais sentido aos seus dados.
+                    </span>
+                    <button onClick={() => openModal('help')}>
+                      Sobre o projeto <ArrowUpRight size={12} />
+                    </button>
+                  </footer>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </main>
         </div>
       </div>
@@ -801,14 +839,24 @@ export default function App() {
                 <FileBarChart2 size={28} />
                 <div>
                   <strong>Relatório de campanhas</strong>
-                  <span>{dateLabel(dateOffset(-days + 1))} — 23 set, 2026</span>
-                  <small>{channel === 'all' ? 'Todos os canais' : channel} · 5 campanhas · CSV</small>
+                  <span>
+                    {nextai.dataset
+                      ? nextai.dataset.summary.filename
+                      : `${dateLabel(dateOffset(-days + 1))} — 23 set, 2026`}
+                  </span>
+                  <small>
+                    {nextai.dataset
+                      ? `${nextai.dataset.summary.campaigns.length} itens do resumo importado`
+                      : `${channel === 'all' ? 'Todos os canais' : channel} · 5 campanhas`}{' '}
+                    · CSV
+                  </small>
                 </div>
-                <span className="demo-mini">DEMO</span>
+                <span className="demo-mini">{nextai.dataset ? 'CSV' : 'DEMO'}</span>
               </div>
               <p className="muted text-sm">
-                Inclui valor gasto, resultados, CPA, valor de conversão, ROAS e CTR. Os números usam os mesmos
-                filtros do dashboard.
+                {nextai.dataset
+                  ? 'Exporta o resumo importado, com até 50 itens de maior gasto. Métricas ausentes ficam vazias; tipos de resultados são preservados.'
+                  : 'Inclui valor gasto, resultados, CPA, valor de conversão, ROAS e CTR. Os números usam os mesmos filtros do dashboard.'}
               </p>
               <Button onClick={exportData}>
                 <ArrowDownToLine size={15} />
@@ -846,6 +894,10 @@ export default function App() {
                 </span>
               </div>
               <CsvImportPanel />
+              <Button variant="outline" onClick={() => navigate('nextai')}>
+                <Sparkles size={16} />
+                Importar e conversar com NextAI
+              </Button>
             </>
           )}
           {displayModal === 'settings' && (

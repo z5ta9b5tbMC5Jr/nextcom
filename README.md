@@ -92,7 +92,7 @@ A porta padrão é 3001. Se alterar `PORT`, atualize também o proxy em `NextCom
 
 ## Importação CSV e assistente de análise
 
-A integração nativa com a Meta continua em espera. O painel **Integrações** aceita CSVs exportados do Gerenciador de Anúncios e reconhece nomes comuns de colunas em português e inglês. O backend interpreta o arquivo com regras determinísticas, valida até 5 MB e 20 mil linhas e apresenta totais, campanhas, datas, países, regiões, canais e horários quando o relatório contém esses recortes. CSV sem país, hora ou outra dimensão continua válido; a NextCom informa quando o dado não está disponível em vez de inventá-lo.
+A integração nativa com a Meta continua em espera. O painel **Integrações** aceita CSVs exportados do Gerenciador de Anúncios nos níveis campanha, conjunto ou anúncio e reconhece nomes de colunas em português e inglês. O backend interpreta o arquivo com regras determinísticas, valida até 5 MB e 20 mil linhas e apresenta totais, itens, datas, países, regiões, canais e horários quando o relatório contém esses recortes. Exportações com início e encerramento do relatório por linha são tratadas como totais do período, sem inventar uma tendência diária. Quando o CSV contém indicadores diferentes de resultado, eles são separados em vez de somados em um total ou CPA incompatível. CSV sem país, hora ou outra dimensão continua válido; a NextCom informa quando o dado não está disponível.
 
 Nesta fase, o dashboard principal continua usando os dados demonstrativos. O resumo importado é mostrado no painel de integrações durante a sessão e não é persistido. Ainda não há contas de usuário, banco ou isolamento multiusuário.
 
@@ -112,10 +112,13 @@ O arquivo `.env.example` contém apenas valores vazios/de demonstração. Nunca 
 | `GET /api/ai/status`          | Estado configurado e identificador do modelo, sem expor a chave  |
 | `POST /api/imports/meta-csv`  | Recebe texto CSV UTF-8 e devolve um resumo calculado no servidor |
 | `POST /api/ai/analyze-import` | Envia um resumo validado ao modelo configurado                   |
+| `POST /api/ai/chat` | Conversa NextAI, com importação e atribuição de país validadas no backend |
 
 Os endpoints atuais não gravam o CSV nem o resumo no servidor. A análise tem limite local de quatro chamadas por minuto por IP, timeout e limite de resposta. O backend escuta em loopback por padrão; autenticação, persistência segura por usuário, gestão de consentimento auditável, exclusão de dados e publicação multiusuário ainda precisam ser implementadas antes de hospedar a aplicação para terceiros. Para a futura versão multiusuário, tokens OpenRouter pessoais e conexões de dados devem ficar em armazenamento de credenciais criptografado, nunca compartilhados no `.env` do servidor.
 
 ## Verificação e produção
+
+A aba **NextAI**, abaixo de Relatórios, permite anexar CSV, conversar com o modelo e aplicar dados ao dashboard com opção de desfazer. Conversas e dados importados permanecem somente na sessão atual. Consulte [o guia NextAI](docs/nextai.md) para exemplos, limites e arquitetura.
 
 O frontend possui um sistema compartilhado de animações de entrada, saída, interação e atualização de dados, com suporte a `prefers-reduced-motion`. Consulte [o guia de movimento](docs/motion.md) ao criar componentes. A preferência do projeto está registrada em `AGENTS.md`.
 

@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import { fileURLToPath } from 'node:url'
 import { CsvImportError, parseMetaCsv, type ImportSummary } from './csv-import.js'
 import { analyzeImport } from './ai-agent.js'
+import { chatWithNextAI } from './nextai.js'
 
 // Resolved relative to this module; secrets never enter the frontend bundle.
 dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)), quiet: true })
@@ -24,6 +25,7 @@ app.use((req, res, next) => {
   }
   next()
 })
+app.use('/api/ai/chat', express.json({ limit: '12mb' }))
 app.use(express.json({ limit: '64kb' }))
 app.use('/api/imports/meta-csv', express.text({ type: ['text/csv', 'application/csv'], limit: '5mb' }))
 
@@ -104,6 +106,12 @@ function cleanGroups(value: unknown) {
         spend,
         results: cleanMetric(item.results),
         conversionValue: cleanMetric(item.conversionValue),
+        resultTypes: Array.isArray(item.resultTypes)
+          ? item.resultTypes.slice(0, 4).flatMap((type) => {
+              const clean = cleanText(type, 80)
+              return clean ? [clean] : []
+            })
+          : [],
       },
     ]
   })
@@ -150,11 +158,25 @@ function validateSummary(value: unknown): ImportSummary | null {
           : []
       })
     : []
+  const resultsByType = Array.isArray(input.resultsByType)
+    ? input.resultsByType.slice(0, 12).flatMap((entry) => {
+        if (!entry || typeof entry !== 'object') return []
+        const row = entry as Record<string, unknown>
+        const type = cleanText(row.type, 80)
+        const typeSpend = cleanMetric(row.spend)
+        const results = cleanMetric(row.results)
+        if (!type || typeSpend === null || results === null || typeSpend < 0 || results < 0) return []
+        return [{ type, spend: typeSpend, results, cpa: cleanMetric(row.cpa) }]
+      })
+    : []
   return {
     filename: 'import.csv',
     rows: Math.min(20_000, Math.max(0, Number(input.rows) || 0)),
     skippedRows: Math.min(20_000, Math.max(0, Number(input.skippedRows) || 0)),
     rowsWithoutDate: Math.min(20_000, Math.max(0, Number(input.rowsWithoutDate) || 0)),
+    periodAggregated: input.periodAggregated === true,
+    entityLabel: cleanText(input.entityLabel, 50) ?? 'Campanhas',
+    resultsLabel: cleanText(input.resultsLabel, 100) ?? 'Resultados',
     dateRange,
     currency: cleanText(input.currency, 3),
     totals: {
@@ -168,6 +190,7 @@ function validateSummary(value: unknown): ImportSummary | null {
       roas: cleanMetric(metrics.roas),
     },
     campaigns: cleanGroups(input.campaigns),
+    resultsByType,
     countries: cleanGroups(input.countries),
     regions: cleanGroups(input.regions),
     channels: cleanGroups(input.channels),
@@ -186,6 +209,31 @@ app.post('/api/ai/analyze-import', analysisRateLimit, async (req, res) => {
     const status = error && typeof error === 'object' && 'status' in error ? Number(error.status) : 502
     const message = error instanceof Error ? error.message : 'Não foi possível concluir a análise.'
     return res.status(status >= 400 && status < 600 ? status : 502).json({ error: message })
+  }
+})
+
+app.post('/api/ai/chat', analysisRateLimit, async (req, res) => {
+  const controller = new AbortController()
+  const close = () => {
+    if (!res.writableEnded) controller.abort()
+  }
+  res.on('close', close)
+  try {
+    const result = await chatWithNextAI(req.body, controller.signal)
+    if (!controller.signal.aborted) return res.json(result)
+  } catch (error) {
+    if (controller.signal.aborted) return
+    const status =
+      error instanceof CsvImportError
+        ? 400
+        : error && typeof error === 'object' && 'status' in error
+          ? Number(error.status)
+          : 502
+    return res
+      .status(status >= 400 && status < 600 ? status : 502)
+      .json({ error: error instanceof Error ? error.message : 'Não foi possível conversar com o agente.' })
+  } finally {
+    res.off('close', close)
   }
 })
 

@@ -42,6 +42,10 @@ Fonte oficial indicada pelo usuário: <https://openrouter.ai/docs/llms-full.txt>
 
 ## NextAI
 
+Atualização de 24/09/2026: conversas sem fonte CSV e saudações isoladas sobre o assistente usam um prompt curto, até 1.200 tokens e roteamento `provider.sort: "latency"`, com timeout de 45 segundos. Para `xiaomi/mimo-v2.5`, cujo catálogo oficial indica `reasoning.mandatory: false`, esse caminho envia `reasoning.effort: "none"`. `exclude: true` sozinho apenas oculta o raciocínio e não o desativa. Outros modelos mantêm esforço baixo até ter sua compatibilidade confirmada. Esse caminho retorna somente texto validado e nunca executa ações; perguntas com dados continuam usando o fluxo completo abaixo. Não houve troca de modelo nem alteração do `.env`.
+
+Um teste real de apresentação do assistente respondeu em 4,65 segundos. É uma medição individual, não uma garantia de latência. A referência oficial foi consultada novamente em https://openrouter.ai/docs/llms-full.txt, incluindo controle de raciocínio e roteamento, junto ao catálogo de modelos/endpoints.
+
 A conversa usa o mesmo endpoint e transporte validados da análise, com JSON `{reply, action, country}`. O backend interpreta a ação em uma lista fechada e calcula métricas pelo importador; não aceita métricas inventadas pelo modelo. A mensagem atual precisa autorizar a alteração. O CSV bruto não sai para o provedor. O chat usa timeout de 120 segundos, incluindo leitura do corpo; a análise existente continua com 60 segundos. O cancelamento do navegador é propagado ao fetch upstream. Consulte [o fluxo, limites e segurança do protótipo](nextai.md).
 
 Na validação desta implementação, uma requisição real com CSV sintético retornou HTTP 200 em aproximadamente 18 segundos, com importação de R$ 10,00 e atribuição explícita ao BR. Uma tentativa anterior excedeu 60 segundos; disponibilidade e latência do provedor não são garantidas. O catálogo oficial confirmou suporte a `response_format` em 5 dos 6 endpoints consultados do modelo configurado.

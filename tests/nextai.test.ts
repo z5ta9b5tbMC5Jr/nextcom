@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { chatWithNextAI, executeChatAction, summarizeSource } from '../NextCom - Back/src/nextai'
+import {
+  chatWithNextAI,
+  executeChatAction,
+  isSocialMessage,
+  summarizeSource,
+} from '../NextCom - Back/src/nextai'
 import { analyzeImport } from '../NextCom - Back/src/ai-agent'
 
 const csv =
@@ -68,6 +73,36 @@ function mockProvider(value: unknown) {
   return mocked
 }
 describe('NextAI: contrato OpenRouter e privacidade', () => {
+  it('usa caminho curto sem raciocínio MiMo e nunca executa ações sem fonte', async () => {
+    vi.stubEnv('OPENROUTER_MODEL', 'xiaomi/mimo-v2.5')
+    const mocked = mockProvider({ reply: 'Sou o Next.', action: 'import', country: 'BR' })
+    const result = await chatWithNextAI({
+      consent: true,
+      message: 'Olá, me fale mais sobre você!',
+      source: null,
+    })
+    const body = JSON.parse(mocked.mock.calls[0][1].body)
+    expect(body.reasoning).toEqual({ effort: 'none', exclude: true })
+    expect(body.max_tokens).toBe(1200)
+    expect(body.provider).toEqual({ require_parameters: true, sort: 'latency' })
+    expect(body.messages[0].content.length).toBeLessThan(1000)
+    expect(result.applied).toBeNull()
+  })
+  it('saudações isoladas não levam dados do painel ao provedor; pedidos de métricas continuam contextuais', async () => {
+    expect(isSocialMessage('Olá, me fale mais sobre você!')).toBe(true)
+    expect(isSocialMessage('Oi, analise o CPA dos meus anúncios')).toBe(false)
+    expect(isSocialMessage('Importe os dados para Brasil')).toBe(false)
+    const mocked = mockProvider({ reply: 'Sou o Next.' })
+    await chatWithNextAI({ consent: true, message: 'Quem é você?', source, sourceKind: 'dashboard' })
+    expect(mocked.mock.calls[0][1].body).not.toContain('Compras')
+    expect(mocked.mock.calls[0][1].body).not.toContain('aggregateData')
+  })
+  it('não assume suporte a reasoning none em outros modelos', async () => {
+    vi.stubEnv('OPENROUTER_MODEL', 'outro/modelo')
+    const mocked = mockProvider({ reply: 'Olá.' })
+    await chatWithNextAI({ consent: true, message: 'Olá' })
+    expect(JSON.parse(mocked.mock.calls[0][1].body).reasoning.effort).toBe('low')
+  })
   it('envia somente agregados, histórico limitado e preserva os parâmetros que funcionam', async () => {
     const mocked = mockProvider({ reply: 'Vou aplicar o arquivo.', action: 'import', country: 'BR' })
     const result = await chatWithNextAI({

@@ -7,10 +7,13 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } } },
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://127.0.0.1:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 60000,
-  },
+  webServer:
+    process.env.NEXTCOM_E2E_EXTERNAL_SERVER === '1'
+      ? undefined
+      : {
+          command: 'npm run dev',
+          url: 'http://127.0.0.1:5173',
+          reuseExistingServer: !process.env.CI,
+          timeout: 60000,
+        },
 })

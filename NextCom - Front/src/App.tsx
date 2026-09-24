@@ -518,10 +518,10 @@ export default function App() {
               </Popover>
             </div>
           </header>
-          <main id="main">
+          <main id="main" className={section === 'nextai' ? 'nextai-main' : undefined}>
             <AnimatePresence mode="wait" initial={false}>
               {section === 'nextai' ? (
-                <motion.div key="nextai" {...presence}>
+                <motion.div key="nextai" {...presence} className="nextai-view">
                   <AIAssistantInterface chat={nextai} onDashboard={() => navigate('main')} />
                 </motion.div>
               ) : nextai.dataset ? (

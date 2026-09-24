@@ -25,9 +25,9 @@ export function AIAssistantInterface({ chat, onDashboard }: { chat: NextAIState;
   const textarea = useRef<HTMLTextAreaElement>(null)
   const last = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (chat.messages.length)
+    if (chat.messages.length || chat.busy)
       last.current?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'nearest' })
-  }, [chat.messages.length, reduced])
+  }, [chat.messages.length, chat.busy, reduced])
   const suggestions = [
     {
       icon: FileSpreadsheet,
@@ -60,79 +60,120 @@ export function AIAssistantInterface({ chat, onDashboard }: { chat: NextAIState;
           Nova conversa
         </Button>
       </div>
-      <AnimatePresence mode="wait" initial={false}>
-        {!chat.messages.length ? (
-          <motion.div key="welcome" {...presence} className="nextai-welcome">
-            <div className="nextai-orb" aria-hidden="true">
-              <Sparkles size={38} strokeWidth={1.3} />
-            </div>
-            <p className="nextai-eyebrow">SEUS DADOS. MAIS POSSIBILIDADES.</p>
-            <h1>
-              Vamos encontrar seu
-              <br />
-              <span>próximo resultado?</span>
-            </h1>
-            <p>
-              Sou o Next. Traga seus dados, compartilhe o contexto.
-              <br />
-              Vamos organizar, analisar e planejar juntos.
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="conversation"
-            {...presence}
-            className="nextai-messages"
-            role="log"
-            aria-label="Conversa com NextAI"
-            aria-live="polite"
-          >
-            {chat.messages.map((message) => (
-              <motion.article key={message.id} {...presence} className={`nextai-message ${message.role}`}>
-                <span className="nextai-author">
-                  {message.role === 'assistant' ? (
-                    <>
-                      <Sparkles size={15} /> Next
-                    </>
-                  ) : (
-                    'Você'
-                  )}
-                </span>
-                {message.attachment && (
-                  <small className="nextai-file-label">
-                    <FileSpreadsheet size={14} />
-                    {message.attachment}
-                  </small>
+      <div className="nextai-stage">
+        <AnimatePresence mode="wait" initial={false}>
+          {!chat.messages.length && !chat.busy ? (
+            <motion.div key="welcome" {...presence} className="nextai-welcome">
+              <div className="nextai-orb" aria-hidden="true">
+                <Sparkles size={38} strokeWidth={1.3} />
+              </div>
+              <p className="nextai-eyebrow">SEUS DADOS. MAIS POSSIBILIDADES.</p>
+              <h1>
+                Vamos encontrar seu
+                <br />
+                <span>próximo resultado?</span>
+              </h1>
+              <p>
+                Sou o Next. Traga seus dados, compartilhe o contexto.
+                <br />
+                Vamos organizar, analisar e planejar juntos.
+              </p>
+              <AnimatePresence>
+                {!chat.messages.length && (
+                  <MotionPanel key="suggestions" exit={presence.exit} className="nextai-suggestions">
+                    {suggestions.map(({ icon: Icon, title, description, prompt }) => (
+                      <button
+                        key={title}
+                        onClick={() => {
+                          chat.setDraft(prompt)
+                          textarea.current?.focus()
+                        }}
+                      >
+                        <Icon size={20} />
+                        <strong>{title}</strong>
+                        <span>{description}</span>
+                        <ArrowUpRight size={16} className="nextai-suggestion-arrow" />
+                      </button>
+                    ))}
+                  </MotionPanel>
                 )}
-                <p>
-                  {message.content
-                    .split(/(\*\*[^*\n]+\*\*)/g)
-                    .map((part, index) =>
-                      part.startsWith('**') && part.endsWith('**') ? (
-                        <strong key={index}>{part.slice(2, -2)}</strong>
-                      ) : (
-                        part
-                      ),
+              </AnimatePresence>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="conversation"
+              {...presence}
+              className="nextai-messages"
+              role="log"
+              aria-label="Conversa com NextAI"
+              aria-live="polite"
+            >
+              {chat.messages.map((message) => (
+                <motion.article key={message.id} {...presence} className={`nextai-message ${message.role}`}>
+                  <span className="nextai-author">
+                    {message.role === 'assistant' ? (
+                      <>
+                        <Sparkles size={15} /> Next
+                      </>
+                    ) : (
+                      'Você'
                     )}
-                </p>
-                {message.receipt && (
-                  <div className="nextai-receipt">
-                    <CheckCheck size={18} />
-                    <div>
-                      <strong>{message.receipt}</strong>
-                      <small>Aplicação concluída nesta conversa. Veja o estado atual no painel.</small>
+                  </span>
+                  {message.attachment && (
+                    <small className="nextai-file-label">
+                      <FileSpreadsheet size={14} />
+                      {message.attachment}
+                    </small>
+                  )}
+                  <p>
+                    {message.content
+                      .split(/(\*\*[^*\n]+\*\*)/g)
+                      .map((part, index) =>
+                        part.startsWith('**') && part.endsWith('**') ? (
+                          <strong key={index}>{part.slice(2, -2)}</strong>
+                        ) : (
+                          part
+                        ),
+                      )}
+                  </p>
+                  {message.receipt && (
+                    <div className="nextai-receipt">
+                      <CheckCheck size={18} />
+                      <div>
+                        <strong>{message.receipt}</strong>
+                        <small>Aplicação concluída nesta conversa. Veja o estado atual no painel.</small>
+                      </div>
+                      <Button variant="ghost" onClick={onDashboard}>
+                        Ver dashboard <ArrowUpRight size={15} />
+                      </Button>
                     </div>
-                    <Button variant="ghost" onClick={onDashboard}>
-                      Ver dashboard <ArrowUpRight size={15} />
-                    </Button>
-                  </div>
+                  )}
+                </motion.article>
+              ))}
+              <AnimatePresence>
+                {chat.busy && (
+                  <motion.article
+                    key="pending"
+                    {...presence}
+                    className="nextai-message user"
+                    aria-label="Mensagem enviada"
+                  >
+                    <span className="nextai-author">Você · enviado</span>
+                    {chat.attachment && (
+                      <small className="nextai-file-label">
+                        <FileSpreadsheet size={14} />
+                        {chat.attachment.filename}
+                      </small>
+                    )}
+                    <p>{chat.draft}</p>
+                  </motion.article>
                 )}
-              </motion.article>
-            ))}
-            <div ref={last} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </AnimatePresence>
+              <div ref={last} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       <MotionPanel className="nextai-compose-area">
         {chat.dataset && (
           <div className="nextai-context">
@@ -179,11 +220,13 @@ export function AIAssistantInterface({ chat, onDashboard }: { chat: NextAIState;
           <textarea
             ref={textarea}
             id="nextai-message"
-            value={chat.draft}
+            value={chat.busy ? '' : chat.draft}
             maxLength={4000}
             disabled={chat.busy}
-            placeholder="Pergunte ao Next ou anexe um CSV para começar…"
-            rows={3}
+            placeholder={
+              chat.busy ? 'Aguardando resposta do Next…' : 'Pergunte ao Next ou anexe um CSV para começar…'
+            }
+            rows={2}
             onChange={(e) => chat.setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -259,7 +302,9 @@ export function AIAssistantInterface({ chat, onDashboard }: { chat: NextAIState;
           {chat.busy && (
             <motion.p key="busy" {...presence} className="nextai-feedback" role="status">
               <Sparkles size={16} />
-              Next está analisando seu pedido. Pode levar até 2 minutos. O painel só muda após a conclusão.
+              {chat.attachment || chat.dataset
+                ? 'Next está consultando seus dados. O painel só muda após a conclusão.'
+                : 'Next está preparando a resposta…'}
             </motion.p>
           )}
           {chat.error && (
@@ -280,26 +325,6 @@ export function AIAssistantInterface({ chat, onDashboard }: { chat: NextAIState;
           </Button>
         )}
       </MotionPanel>
-      <AnimatePresence>
-        {!chat.messages.length && (
-          <MotionPanel key="suggestions" exit={presence.exit} className="nextai-suggestions">
-            {suggestions.map(({ icon: Icon, title, description, prompt }) => (
-              <button
-                key={title}
-                onClick={() => {
-                  chat.setDraft(prompt)
-                  textarea.current?.focus()
-                }}
-              >
-                <Icon size={20} />
-                <strong>{title}</strong>
-                <span>{description}</span>
-                <ArrowUpRight size={16} className="nextai-suggestion-arrow" />
-              </button>
-            ))}
-          </MotionPanel>
-        )}
-      </AnimatePresence>
       <p className="nextai-footnote">
         <ShieldCheck size={15} />
         Dados e conversa ficam na memória desta sessão. Recarregar limpa o painel importado. A IA pode errar;

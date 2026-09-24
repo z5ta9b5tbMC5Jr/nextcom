@@ -661,6 +661,28 @@ main {
   }
 }
 /* NextAI: wrap content instead of scaling text to fit. */
+@media (max-width: 760px), (max-height: 680px) {
+  .main-shell:has(.nextai-main) {
+    height: auto;
+    min-height: 100dvh;
+  }
+  main.nextai-main {
+    flex: none;
+    padding: 16px;
+  }
+  .nextai-main .nextai-page {
+    height: auto;
+    min-height: calc(100dvh - 102px);
+    grid-template-rows: auto 1fr auto auto;
+  }
+  .nextai-main .nextai-stage {
+    overflow: visible;
+    padding: 0;
+  }
+  .nextai-main .nextai-welcome {
+    min-height: 0;
+  }
+}
 @media (max-width: 1100px) {
   .imported-dashboard .imported-grid {
     grid-template-columns: minmax(0, 1fr);

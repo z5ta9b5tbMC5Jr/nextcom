@@ -102,3 +102,73 @@ for (const width of [320, 768, 1440, 1920]) {
     await expect(page.locator('html')).not.toHaveClass('dark')
   })
 }
+
+test('chat ocupa a largura útil e mantém compositor visível em monitores grandes', async ({ page }) => {
+  await openChat(page)
+  for (const [width, height] of [
+    [1366, 768],
+    [1920, 1080],
+    [2560, 1440],
+    [3440, 1440],
+  ]) {
+    await page.setViewportSize({ width, height })
+    await expect
+      .poll(async () => {
+        const composer = await page.locator('.nextai-composer').boundingBox()
+        const main = await page.locator('main').boundingBox()
+        return Boolean(
+          composer && main && composer.width > main.width * 0.88 && composer.y + composer.height <= height,
+        )
+      })
+      .toBe(true)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await page.setViewportSize({ width: 1366, height: 768 })
+  await page.getByRole('checkbox').check()
+  await page.route('**/api/ai/chat', (route) =>
+    route.fulfill({
+      json: {
+        reply: 'Uma resposta extensa para testar a leitura.\n'.repeat(90),
+        applied: null,
+        model: 'teste',
+      },
+    }),
+  )
+  await page.getByRole('textbox', { name: 'Mensagem para NextAI' }).fill('Explique')
+  await page.getByRole('button', { name: 'Enviar mensagem' }).click()
+  await expect(page.getByRole('log')).toContainText('Uma resposta extensa')
+  await expect
+    .poll(() => page.locator('.nextai-stage').evaluate((el) => el.scrollHeight > el.clientHeight))
+    .toBe(true)
+  await expect(page.getByRole('button', { name: 'Enviar mensagem' })).toBeInViewport()
+  await page.locator('.nextai-stage').evaluate((el) => {
+    el.scrollTop = 0
+  })
+  await expect(page.getByRole('button', { name: 'Enviar mensagem' })).toBeInViewport()
+})
+
+test('mensagem aparece durante a espera e pode ser cancelada por teclado', async ({ page }) => {
+  await openChat(page)
+  await page.route('**/api/ai/chat', (route) => route.abort('failed'))
+  await page.getByRole('checkbox').check()
+  // Hold the network response so the pending state is observable without consuming provider credits.
+  await page.unroute('**/api/ai/chat')
+  let finish!: () => void
+  await page.route('**/api/ai/chat', async (route) => {
+    await new Promise<void>((resolve) => {
+      finish = resolve
+    })
+    await route.abort().catch(() => {})
+  })
+  await page.getByRole('textbox', { name: 'Mensagem para NextAI' }).fill('Olá, me fale mais sobre você')
+  await page.getByRole('textbox', { name: 'Mensagem para NextAI' }).press('Enter')
+  await expect(page.getByLabel('Mensagem enviada')).toContainText('Olá, me fale mais sobre você')
+  await expect(page.locator('.nextai-feedback')).not.toContainText('2 minutos')
+  await page.getByRole('button', { name: 'Cancelar resposta' }).focus()
+  await page.keyboard.press('Enter')
+  finish()
+  await expect(page.getByRole('textbox', { name: 'Mensagem para NextAI' })).toHaveValue(
+    'Olá, me fale mais sobre você',
+  )
+  await expect(page.getByLabel('Mensagem enviada')).toHaveCount(0)
+})

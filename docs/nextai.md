@@ -2,6 +2,8 @@
 
 A aba NextAI fica abaixo de Relatórios. A interface adapta o componente de referência ao tema violeta da NextCom, usando os componentes e tokens de movimento existentes. Funciona em temas claro/escuro, com teclado e movimento reduzido.
 
+O chat ocupa a largura útil da aplicação. No desktop, o histórico tem rolagem própria e o compositor permanece visível; telas pequenas ou baixas usam rolagem natural. Ao enviar, a mensagem aparece imediatamente na conversa. Erros e cancelamento preservam o rascunho e o anexo.
+
 ## Como usar
 
 1. Abra NextAI e anexe um CSV UTF-8 do Gerenciador de Anúncios, de até 5 MB/20 mil linhas.
@@ -29,10 +31,12 @@ O chat também analisa os dados ativos e ajuda no planejamento. Não publica nem
 - `components/ImportedDashboard.tsx`: painel alimentado pelo resumo real, sem comparativos fictícios.
 - `POST /api/ai/chat`: recebe mensagem, histórico limitado e uma fonte CSV; exige consentimento e usa o mesmo limitador das análises.
 - `src/nextai.ts`: parseia a fonte, envia agregados ao modelo e executa exclusivamente `import` ou `assign_country`. Saída desconhecida, pedido sem instrução explícita, país ambíguo e tentativa de sobrescrever geografia são recusados sem mudança no painel.
-- `src/ai-agent.ts`: transporte OpenRouter compartilhado com a análise anterior. O chat permite até 120 segundos; a análise anterior mantém 60 segundos. Erros não expõem respostas brutas, credenciais ou metadados privados.
+- `src/ai-agent.ts`: transporte OpenRouter compartilhado com a análise anterior. Perguntas sem dados e saudações usam um caminho curto de até 45 segundos; ações e consultas aos dados permitem até 120 segundos; a análise anterior mantém 60 segundos. Erros não expõem respostas brutas, credenciais ou metadados privados.
 
 Esta é uma aplicação local: a API continua vinculada a `127.0.0.1`. Antes de hospedagem multiusuário, implementar autenticação, autorização por workspace, isolamento de datasets, proteção contra abuso e persistência com política de retenção.
 
 ## Validação
 
 `npm test` cobre ações permitidas, preservação de métricas/datas, consentimento, minimização de dados, falhas do provedor e compatibilidade da análise anterior. `npm run test:e2e` cobre o fluxo CSV → chat → painel → desfazer, erro, cancelamento, teclado, temas e larguras de 320 a 1920 px. Os testes automatizados usam respostas simuladas e não consomem créditos da OpenRouter.
+
+Para testar com a aplicação já em execução, defina `NEXTCOM_E2E_EXTERNAL_SERVER=1` antes de executar Playwright. Nesse modo, o teste não inicia servidores. As verificações do chat incluem também monitores de 2560 e 3440 px e conversas longas com compositor visível.

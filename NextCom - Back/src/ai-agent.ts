@@ -214,7 +214,12 @@ export async function analyzeImport(summary: ImportSummary): Promise<AgentAnalys
 }
 
 export type AgentMessage = { role: 'system' | 'user' | 'assistant'; content: string }
-export async function requestAgentJson(messages: AgentMessage[], timeoutMs = 60_000, signal?: AbortSignal) {
+export async function requestAgentJson(
+  messages: AgentMessage[],
+  timeoutMs = 60_000,
+  signal?: AbortSignal,
+  profile: 'analysis' | 'conversation' = 'analysis',
+) {
   const key = process.env.OPENROUTER_API_KEY?.trim()
   if (!key)
     throw Object.assign(
@@ -240,11 +245,16 @@ export async function requestAgentJson(messages: AgentMessage[], timeoutMs = 60_
       body: JSON.stringify({
         model,
         temperature: 0.1,
-        max_tokens: 2400,
-        reasoning: { effort: 'low', exclude: true },
+        max_tokens: profile === 'conversation' ? 1200 : 2400,
+        // The current catalog explicitly marks MiMo v2.5 reasoning as optional.
+        // Keep the established setting for other models rather than assuming support for "none".
+        reasoning: {
+          effort: profile === 'conversation' && model === 'xiaomi/mimo-v2.5' ? 'none' : 'low',
+          exclude: true,
+        },
         response_format: { type: 'json_object' },
         plugins: [{ id: 'response-healing' }],
-        provider: { require_parameters: true },
+        provider: { require_parameters: true, ...(profile === 'conversation' ? { sort: 'latency' } : {}) },
         stream: false,
         messages,
       }),
